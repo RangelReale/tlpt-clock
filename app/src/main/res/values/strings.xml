@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TLPT Clock</string>
+    <string name="level">Level %1$d</string>
+    <string name="blinds_up">Blinds up: level %1$d</string>
+    <string name="previous_level">Previous level</string>
+    <string name="next_level">Next level</string>
+    <string name="start">Start</string>
+    <string name="pause">Pause</string>
+    <string name="resume">Resume</string>
+    <string name="reset_level">Reset level</string>
+    <string name="new_game">New game</string>
+    <string name="new_game_message">Go back to level 1 and stop the clock? The level length stays the same.</string>
+    <string name="cancel">Cancel</string>
+    <string name="set">Set</string>
+    <string name="level_length">Level length</string>
+    <string name="length_minutes">%1$d min</string>
+    <string name="shorter">One minute shorter</string>
+    <string name="longer">One minute longer</string>
+    <string name="minutes_field">Minutes (%1$d to %2$d)</string>
+    <string name="set_level_length">Set level length</string>
+    <string name="preset_minutes">%1$d minutes</string>
+</resources>
