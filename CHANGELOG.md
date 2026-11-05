@@ -10,6 +10,8 @@ Before you push a tag, move the entries under "Unreleased" into a new section fo
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-05
+
 ### Changed
 
 - Buttons that change the level length by five minutes replace the preset lengths.
@@ -31,5 +33,6 @@ Before you push a tag, move the entries under "Unreleased" into a new section fo
 - A light, dark or device-matching theme.
 - The level length, Reset level and New game can change only while the clock is paused.
 
-[Unreleased]: https://github.com/RangelReale/tlpt-clock/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/RangelReale/tlpt-clock/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/RangelReale/tlpt-clock/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/RangelReale/tlpt-clock/releases/tag/v1.0.0
