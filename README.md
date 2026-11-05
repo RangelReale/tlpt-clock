@@ -9,7 +9,7 @@ A native Android poker clock for TLPT (The Little Poker Table). This first versi
 - **While the clock runs or the alarm rings,** the length controls, **Reset level** and **New game** are turned off, so a stray tap cannot change the game.
 - **When the countdown reaches zero:** the alarm rings 5 times and the app shows "Blinds up". Tap **Stop alarm**, on the clock or in the alarm notification, to silence it. The next level starts from its full length when the alarm stops by itself or when you stop it. In the settings you can instead let the next level start at once, while the alarm rings.
 - **Move between levels by hand:** `‹` and `›` change the level and restart the countdown.
-- **Reset level** restarts the countdown of the current level. It works only while paused.
+- **Reset level** restarts the countdown of the current level. It asks first, and it works only while paused.
 - **New game** returns to a paused level 1 and keeps the level length. It works only while paused.
 
 The screen stays on while the clock runs. The alarm uses the alarm volume, which the volume keys control while the app is on screen.

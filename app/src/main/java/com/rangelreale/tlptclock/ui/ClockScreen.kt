@@ -69,6 +69,7 @@ private const val URGENT_SECONDS = 10L
 @Composable
 fun ClockScreen(ui: ClockUiState, actions: ClockActions, onOpenSettings: () -> Unit = {}) {
     var editingLength by rememberSaveable { mutableStateOf(false) }
+    var confirmingReset by rememberSaveable { mutableStateOf(false) }
     var confirmingNewGame by rememberSaveable { mutableStateOf(false) }
 
     BoxWithConstraints(
@@ -92,6 +93,7 @@ fun ClockScreen(ui: ClockUiState, actions: ClockActions, onOpenSettings: () -> U
                         ui,
                         actions,
                         { editingLength = true },
+                        { confirmingReset = true },
                         { confirmingNewGame = true },
                         onOpenSettings,
                     )
@@ -105,6 +107,7 @@ fun ClockScreen(ui: ClockUiState, actions: ClockActions, onOpenSettings: () -> U
                     ui,
                     actions,
                     { editingLength = true },
+                    { confirmingReset = true },
                     { confirmingNewGame = true },
                     onOpenSettings,
                 )
@@ -122,26 +125,40 @@ fun ClockScreen(ui: ClockUiState, actions: ClockActions, onOpenSettings: () -> U
             onDismiss = { editingLength = false },
         )
     }
-    if (confirmingNewGame) {
-        AlertDialog(
-            onDismissRequest = { confirmingNewGame = false },
-            title = { Text(stringResource(R.string.new_game)) },
-            text = { Text(stringResource(R.string.new_game_message)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        actions.newGame()
-                        confirmingNewGame = false
-                    },
-                ) { Text(stringResource(R.string.new_game)) }
+    if (confirmingReset) {
+        ConfirmDialog(
+            action = stringResource(R.string.reset_level),
+            message = stringResource(R.string.reset_level_message),
+            onConfirm = {
+                actions.resetLevel()
+                confirmingReset = false
             },
-            dismissButton = {
-                TextButton(onClick = { confirmingNewGame = false }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            },
+            onDismiss = { confirmingReset = false },
         )
     }
+    if (confirmingNewGame) {
+        ConfirmDialog(
+            action = stringResource(R.string.new_game),
+            message = stringResource(R.string.new_game_message),
+            onConfirm = {
+                actions.newGame()
+                confirmingNewGame = false
+            },
+            onDismiss = { confirmingNewGame = false },
+        )
+    }
+}
+
+/** Asks before an action that loses the time played. [action] is the title and the confirm button. */
+@Composable
+private fun ConfirmDialog(action: String, message: String, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(action) },
+        text = { Text(message) },
+        confirmButton = { TextButton(onClick = onConfirm) { Text(action) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
 }
 
 @Composable
@@ -218,6 +235,7 @@ private fun Controls(
     ui: ClockUiState,
     actions: ClockActions,
     onEditLength: () -> Unit,
+    onResetLevel: () -> Unit,
     onNewGame: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
@@ -263,7 +281,7 @@ private fun Controls(
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(
-                onClick = actions::resetLevel,
+                onClick = onResetLevel,
                 enabled = ui.canEdit,
                 contentPadding = PaddingValues(4.dp),
                 modifier = Modifier.weight(1f).height(48.dp),

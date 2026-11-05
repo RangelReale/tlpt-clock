@@ -13,6 +13,7 @@ Before you push a tag, move the entries under "Unreleased" into a new section fo
 ### Changed
 
 - Buttons that change the level length by five minutes replace the preset lengths.
+- Reset level asks for confirmation first, like New game.
 
 ## [1.0.0] - 2026-11-05
 

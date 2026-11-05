@@ -9,6 +9,7 @@
     <string name="pause">Pause</string>
     <string name="resume">Resume</string>
     <string name="reset_level">Reset level</string>
+    <string name="reset_level_message">Restart the countdown of this level? The time already played in it is lost.</string>
     <string name="new_game">New game</string>
     <string name="new_game_message">Go back to level 1 and stop the clock? The level length stays the same.</string>
     <string name="cancel">Cancel</string>

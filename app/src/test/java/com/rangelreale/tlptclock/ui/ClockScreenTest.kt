@@ -12,6 +12,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onLast
@@ -166,6 +167,8 @@ class ClockScreenTest {
         compose.onNodeWithText("Resume").assertExists()
 
         compose.onNodeWithText("Reset level").performClick()
+        compose.onNodeWithText("19:00").assertExists()
+        compose.onAllNodesWithText("Reset level").onLast().performClick()
         compose.onNodeWithText("20:00").assertExists()
         compose.onNodeWithText("Start").assertExists()
 
@@ -210,6 +213,17 @@ class ClockScreenTest {
         compose.onNodeWithContentDescription("Five minutes longer").assertIsEnabled()
         compose.onNodeWithText("Reset level").assertIsEnabled()
         compose.onNodeWithText("New game").assertIsEnabled()
+    }
+
+    @Test
+    fun `reset level asks first`() {
+        val vm = show()
+        vm.startOrPause()
+        time = MS_PER_MINUTE
+        vm.startOrPause()
+        compose.onNodeWithText("Reset level").performClick()
+        compose.onNodeWithText("Cancel").performClick()
+        compose.onNodeWithText("19:00").assertExists()
     }
 
     @Test
