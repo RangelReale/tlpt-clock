@@ -191,7 +191,7 @@ private fun TimeDisplay(ui: ClockUiState, modifier: Modifier, onClick: () -> Uni
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClickLabel = editLabel, onClick = onClick),
+            .clickable(enabled = ui.canEdit, onClickLabel = editLabel, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         // A monospace digit is 0.6 em wide. The margin keeps the text from touching the edges.
@@ -263,6 +263,7 @@ private fun Controls(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(
                 onClick = actions::resetLevel,
+                enabled = ui.canEdit,
                 contentPadding = PaddingValues(4.dp),
                 modifier = Modifier.weight(1f).height(48.dp),
             ) {
@@ -270,6 +271,7 @@ private fun Controls(
             }
             OutlinedButton(
                 onClick = onNewGame,
+                enabled = ui.canEdit,
                 contentPadding = PaddingValues(4.dp),
                 modifier = Modifier.weight(1f).height(48.dp),
             ) {
@@ -298,10 +300,11 @@ private fun LengthStepper(ui: ClockUiState, actions: ClockActions, onEditLength:
         StepButton(
             glyph = "−",
             label = stringResource(R.string.shorter),
-            enabled = ui.lengthMinutes > MIN_LENGTH_MINUTES,
+            enabled = ui.canEdit && ui.lengthMinutes > MIN_LENGTH_MINUTES,
         ) { actions.setLengthMinutes(ui.lengthMinutes - 1) }
         OutlinedButton(
             onClick = onEditLength,
+            enabled = ui.canEdit,
             contentPadding = PaddingValues(0.dp),
             modifier = Modifier.weight(1f).height(56.dp),
         ) {
@@ -314,7 +317,7 @@ private fun LengthStepper(ui: ClockUiState, actions: ClockActions, onEditLength:
         StepButton(
             glyph = "+",
             label = stringResource(R.string.longer),
-            enabled = ui.lengthMinutes < MAX_LENGTH_MINUTES,
+            enabled = ui.canEdit && ui.lengthMinutes < MAX_LENGTH_MINUTES,
         ) { actions.setLengthMinutes(ui.lengthMinutes + 1) }
     }
 }
@@ -342,16 +345,24 @@ private fun PresetRow(ui: ClockUiState, actions: ClockActions) {
             val label = stringResource(R.string.preset_minutes, minutes)
             OutlinedButton(
                 onClick = { actions.setLengthMinutes(minutes) },
+                enabled = ui.canEdit,
                 contentPadding = PaddingValues(0.dp),
                 colors = if (selected) {
+                    // While running, the chosen preset stays visible but dimmed.
                     ButtonDefaults.outlinedButtonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary,
+                        disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.38f),
+                        disabledContentColor = MaterialTheme.colorScheme.onPrimary,
                     )
                 } else {
                     ButtonDefaults.outlinedButtonColors()
                 },
-                border = if (selected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                border = when {
+                    selected -> null
+                    ui.canEdit -> BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                    else -> BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
+                },
                 modifier = Modifier
                     .weight(1f)
                     .height(48.dp)

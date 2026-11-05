@@ -182,6 +182,21 @@ class ClockViewModelTest {
     }
 
     @Test
+    fun `length reset and new game are ignored while running`() {
+        val vm = viewModel()
+        vm.nextLevel()
+        vm.startOrPause()
+        time = MS_PER_MINUTE
+        vm.setLengthMinutes(5)
+        vm.resetLevel()
+        vm.newGame()
+        vm.tick()
+        assertEquals(20, vm.ui.value.lengthMinutes)
+        assertEquals(2, vm.ui.value.level)
+        assertEquals(19 * 60L, vm.ui.value.secondsLeft)
+    }
+
+    @Test
     fun `length stays within its limits`() {
         val vm = viewModel()
         vm.setLengthMinutes(0)

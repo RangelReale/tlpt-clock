@@ -8,6 +8,8 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ViewRootForTest
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -182,6 +184,24 @@ class ClockScreenTest {
         time += MS_PER_MINUTE
         vm.tick()
         compose.onNodeWithText("04:00").assertExists()
+    }
+
+    @Test
+    fun `length reset and new game work only while paused`() {
+        show()
+        compose.onNodeWithText("Start").performClick()
+        compose.onNodeWithContentDescription("10 minutes").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("One minute longer").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("One minute shorter").assertIsNotEnabled()
+        compose.onNodeWithText("20 min").assertIsNotEnabled()
+        compose.onNodeWithText("Reset level").assertIsNotEnabled()
+        compose.onNodeWithText("New game").assertIsNotEnabled()
+        save("portrait-running")
+
+        compose.onNodeWithText("Pause").performClick()
+        compose.onNodeWithContentDescription("10 minutes").assertIsEnabled()
+        compose.onNodeWithText("Reset level").assertIsEnabled()
+        compose.onNodeWithText("New game").assertIsEnabled()
     }
 
     @Test

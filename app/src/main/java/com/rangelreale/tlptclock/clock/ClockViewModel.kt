@@ -25,7 +25,10 @@ data class ClockUiState(
     val isAtLevelStart: Boolean,
     val blindsUp: Boolean,
     val isAlarmRinging: Boolean = false,
-)
+) {
+    /** The level length can change, and the level or game can restart, only while paused. */
+    val canEdit: Boolean get() = !isRunning && !isAlarmRinging
+}
 
 /** The commands the screen can give. */
 interface ClockActions {
@@ -84,14 +87,19 @@ class ClockViewModel(
         publish()
     }
 
-    override fun resetLevel() = command { state, t -> state.resetLevel(t) }
+    override fun resetLevel() = editCommand { state, t -> state.resetLevel(t) }
     override fun nextLevel() = command { state, t -> state.nextLevel(t) }
     override fun previousLevel() = command { state, t -> state.previousLevel(t) }
-    override fun newGame() = command { state, _ -> state.newGame() }
+    override fun newGame() = editCommand { state, _ -> state.newGame() }
 
-    override fun setLengthMinutes(minutes: Int) = command { state, t ->
+    override fun setLengthMinutes(minutes: Int) = editCommand { state, t ->
         val allowed = minutes.coerceIn(MIN_LENGTH_MINUTES, MAX_LENGTH_MINUTES)
         state.withLevelLength(allowed * MS_PER_MINUTE, t)
+    }
+
+    /** Ignores the change unless the clock is paused, in case a tap arrives as the clock starts. */
+    private fun editCommand(change: (ClockState, Long) -> ClockState) {
+        if (currentUi().canEdit) command(change)
     }
 
     private fun command(change: (ClockState, Long) -> ClockState) {
