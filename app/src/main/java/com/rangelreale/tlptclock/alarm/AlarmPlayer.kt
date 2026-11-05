@@ -6,47 +6,54 @@ import android.media.AudioManager
 import android.media.MediaPlayer
 import android.media.RingtoneManager
 import android.media.ToneGenerator
-import android.net.Uri
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
 import com.rangelreale.tlptclock.settings.AlarmSound
 import com.rangelreale.tlptclock.settings.AppSettings
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 
 /**
- * Plays the level-end alarm as the settings describe.
+ * Plays the level-end alarm as the settings describe: [AppSettings.ringCount] rings, each a beep or
+ * up to [DEVICE_RING_MS] of a device sound, with a vibration if it is on.
  *
- * Sound uses the alarm stream, so muting media or the ringer does not silence it. The alarm never
- * lasts longer than [MAX_PLAY_MS], because the system stops a broadcast receiver that runs too long.
+ * Sound uses the alarm stream, so muting media or the ringer does not silence it. Cancelling the
+ * calling coroutine stops the alarm at once.
  */
 object AlarmPlayer {
-    const val MAX_PLAY_MS = 8_000L
     private const val TAG = "AlarmPlayer"
     private const val BEEP_MS = 400
-    private const val BEEP_GAP_MS = 600L
+    private const val BEEP_RING_MS = 1_000L
+    const val DEVICE_RING_MS = 3_000L
+    private const val DEVICE_GAP_MS = 700L
+    private const val SILENT_RING_MS = 1_000L
+    private const val VIBRATE_MS = 500L
 
     private val alarmAttributes: AudioAttributes = AudioAttributes.Builder()
         .setUsage(AudioAttributes.USAGE_ALARM)
         .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
         .build()
 
-    suspend fun play(context: Context, settings: AppSettings) = coroutineScope {
-        if (settings.vibrate) launch { vibrate(context) }
-        withTimeoutOrNull(MAX_PLAY_MS) {
+    suspend fun play(context: Context, settings: AppSettings) {
+        val vibrator = if (settings.vibrate) context.getSystemService(Vibrator::class.java) else null
+        val ring: () -> Unit = { vibrator?.let(::vibrateOnce) }
+        try {
             when (settings.sound) {
-                AlarmSound.BEEPS -> beeps(settings.beepCount)
-                AlarmSound.DEVICE_SOUND -> deviceSound(context, settings.soundUri)
-                AlarmSound.NONE -> Unit
+                AlarmSound.BEEPS -> beeps(settings.ringCount, ring)
+                AlarmSound.DEVICE_SOUND -> deviceSound(context, settings, ring)
+                AlarmSound.NONE -> if (vibrator != null) {
+                    repeat(settings.ringCount) {
+                        ring()
+                        delay(SILENT_RING_MS)
+                    }
+                }
             }
+        } finally {
+            vibrator?.cancel()
         }
     }
 
-    private suspend fun beeps(count: Int) {
+    private suspend fun beeps(count: Int, ring: () -> Unit) {
         val tones = try {
             ToneGenerator(AudioManager.STREAM_ALARM, ToneGenerator.MAX_VOLUME)
         } catch (e: RuntimeException) {
@@ -56,42 +63,48 @@ object AlarmPlayer {
         }
         try {
             repeat(count) {
+                ring()
                 tones.startTone(ToneGenerator.TONE_CDMA_HIGH_L, BEEP_MS)
-                delay(BEEP_GAP_MS)
+                delay(BEEP_RING_MS)
             }
         } finally {
             tones.release()
         }
     }
 
-    /** Plays the sound once. Without a picked sound it uses the device's default alarm sound. */
-    private suspend fun deviceSound(context: Context, picked: Uri?) {
-        val uri = picked ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM) ?: return
+    /** Without a picked sound this uses the device's default alarm sound. */
+    private suspend fun deviceSound(context: Context, settings: AppSettings, ring: () -> Unit) {
+        val uri = settings.soundUri ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
         val player = MediaPlayer()
         try {
-            val done = CompletableDeferred<Unit>()
-            player.setAudioAttributes(alarmAttributes)
-            player.setDataSource(context, uri)
-            player.setOnCompletionListener { done.complete(Unit) }
-            player.setOnErrorListener { _, _, _ -> done.complete(Unit); true }
-            player.prepare()
-            player.start()
-            done.await()
-        } catch (e: Exception) {
-            // The sound may have been deleted. Fall back to beeps so the level end is not missed.
-            Log.w(TAG, "Cannot play $uri", e)
-            beeps(3)
+            try {
+                player.setAudioAttributes(alarmAttributes)
+                player.setDataSource(context, uri!!)
+                player.prepare()
+            } catch (e: Exception) {
+                // The sound may have been deleted. Beep instead so the level end is not missed.
+                Log.w(TAG, "Cannot play $uri", e)
+                beeps(settings.ringCount, ring)
+                return
+            }
+            val ringMs = player.duration.toLong().takeIf { it > 0 }?.coerceAtMost(DEVICE_RING_MS)
+                ?: DEVICE_RING_MS
+            repeat(settings.ringCount) { index ->
+                ring()
+                player.seekTo(0)
+                player.start()
+                delay(ringMs)
+                player.pause()
+                if (index < settings.ringCount - 1) delay(DEVICE_GAP_MS)
+            }
         } finally {
             player.release()
         }
     }
 
-    private suspend fun vibrate(context: Context) {
-        val vibrator = context.getSystemService(Vibrator::class.java) ?: return
+    private fun vibrateOnce(vibrator: Vibrator) {
         if (!vibrator.hasVibrator()) return
-        val pattern = longArrayOf(0, 500, 300, 500, 300, 500)
         @Suppress("DEPRECATION") // The replacement needs API 33.
-        vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1), alarmAttributes)
-        delay(pattern.sum())
+        vibrator.vibrate(VibrationEffect.createOneShot(VIBRATE_MS, 255), alarmAttributes)
     }
 }

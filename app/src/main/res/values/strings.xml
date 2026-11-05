@@ -28,16 +28,22 @@
     <string name="theme_dark">Dark</string>
     <string name="level_end_alarm">Alarm when a level ends</string>
     <string name="sound_beeps">Beeps</string>
-    <string name="beep_count">Number of beeps</string>
-    <string name="fewer_beeps">One beep fewer</string>
-    <string name="more_beeps">One beep more</string>
+    <string name="ring_count">Number of rings</string>
+    <string name="fewer_rings">One ring fewer</string>
+    <string name="more_rings">One ring more</string>
+    <string name="wait_for_alarm">Start the next level after the alarm</string>
+    <string name="wait_for_alarm_detail">The countdown waits until the alarm stops or you tap Stop alarm.</string>
+    <string name="stop_alarm">Stop alarm</string>
+    <string name="alarm_channel">Level-end alarm</string>
+    <string name="alarm_text_waits">The next level starts when the alarm stops.</string>
+    <string name="alarm_text_runs">The next level has started.</string>
     <string name="sound_device">Sound from the device</string>
     <string name="sound_device_default">Default alarm sound</string>
     <string name="choose_sound">Choose sound</string>
     <string name="sound_none">No sound</string>
     <string name="vibrate">Vibrate</string>
     <string name="test_alarm">Test alarm</string>
-    <string name="alarm_note">The alarm plays at the alarm volume, also when the app is in the background or the screen is off. A device sound plays for at most 8 seconds.</string>
+    <string name="alarm_note">The alarm plays at the alarm volume, also when the app is in the background or the screen is off. Each ring of a device sound lasts up to 3 seconds.</string>
     <string name="notification_channel">Running clock</string>
     <string name="notification_text">Time left in this level</string>
 </resources>

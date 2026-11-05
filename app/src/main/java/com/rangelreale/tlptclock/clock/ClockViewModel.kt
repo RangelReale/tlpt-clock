@@ -7,13 +7,12 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.rangelreale.tlptclock.alarm.LevelEndScheduler
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.launch
 
@@ -25,16 +24,13 @@ data class ClockUiState(
     val isRunning: Boolean,
     val isAtLevelStart: Boolean,
     val blindsUp: Boolean,
+    val isAlarmRinging: Boolean = false,
 )
-
-/** Keeps the alarm and notification in step with the clock while the app is in the background. */
-fun interface ClockScheduler {
-    fun update(state: ClockState)
-}
 
 /** The commands the screen can give. */
 interface ClockActions {
     fun startOrPause()
+    fun stopAlarm()
     fun resetLevel()
     fun nextLevel()
     fun previousLevel()
@@ -43,28 +39,28 @@ interface ClockActions {
 }
 
 class ClockViewModel(
-    private val store: ClockStore,
+    private val controller: ClockController,
     private val now: () -> Long,
-    private val scheduler: ClockScheduler = ClockScheduler {},
 ) : ViewModel(), ClockActions {
 
-    private var clock = store.load() ?: ClockState()
-    private var blindsUp = false
-    private var blindsUpJob: Job? = null
-
-    private val _ui = MutableStateFlow(clock.toUi(now()))
+    private val _ui = MutableStateFlow(currentUi())
     val ui: StateFlow<ClockUiState> = _ui.asStateFlow()
 
     init {
-        // The system drops alarms when the app is updated or force-stopped.
-        scheduler.update(clock)
+        // The alarm service and receiver can change the clock while the screen shows it.
+        viewModelScope.launch {
+            combine(controller.state, controller.ringing) { _, _ -> }.collect { publish() }
+        }
     }
 
-    /** Keeps the clock current while the caller stays active. It only loops while the clock runs. */
+    /**
+     * Keeps the screen current while the caller stays active. It only loops while the clock runs or
+     * shows "Blinds up".
+     */
     suspend fun runTicker() {
         tick()
-        ui.distinctUntilChangedBy { it.isRunning }.collectLatest { state ->
-            while (state.isRunning) {
+        ui.distinctUntilChangedBy { it.isRunning || it.blindsUp }.collectLatest { state ->
+            while (state.isRunning || state.blindsUp) {
                 tick()
                 delay(TICK_MS)
             }
@@ -72,22 +68,20 @@ class ClockViewModel(
     }
 
     fun tick() {
-        val t = now()
-        val advanced = clock.advance(t)
-        if (advanced.level != clock.level) {
-            clock = advanced
-            store.save(clock, t)
-            scheduler.update(clock)
-            showBlindsUp()
-        }
-        publish(t)
+        controller.tick()
+        publish()
     }
 
     /** Updates the alarm and notification, for example after the user allows notifications. */
-    fun refreshBackground() = scheduler.update(clock)
+    fun refreshBackground() = controller.refresh()
 
     override fun startOrPause() = command { state, t ->
         if (state.isRunning) state.pause(t) else state.start(t)
+    }
+
+    override fun stopAlarm() {
+        controller.stopAlarm()
+        publish()
     }
 
     override fun resetLevel() = command { state, t -> state.resetLevel(t) }
@@ -100,40 +94,30 @@ class ClockViewModel(
         state.withLevelLength(allowed * MS_PER_MINUTE, t)
     }
 
-    private inline fun command(change: (ClockState, Long) -> ClockState) {
-        tick()
+    private fun command(change: (ClockState, Long) -> ClockState) {
+        controller.update(change)
+        publish()
+    }
+
+    private fun publish() {
+        _ui.value = currentUi()
+    }
+
+    private fun currentUi(): ClockUiState {
         val t = now()
-        blindsUpJob?.cancel()
-        blindsUp = false
-        clock = change(clock, t)
-        store.save(clock, t)
-        scheduler.update(clock)
-        publish(t)
-    }
-
-    private fun showBlindsUp() {
-        blindsUp = true
-        blindsUpJob?.cancel()
-        blindsUpJob = viewModelScope.launch {
-            delay(BLINDS_UP_MS)
-            blindsUp = false
-            publish(now())
-        }
-    }
-
-    private fun publish(t: Long) {
-        _ui.value = clock.toUi(t)
-    }
-
-    private fun ClockState.toUi(t: Long): ClockUiState {
-        val left = remainingAt(t)
+        val clock = controller.state.value
+        val ringing = controller.ringing.value
+        val left = clock.remainingAt(t)
+        val endedAt = controller.levelEndedAtMs
         return ClockUiState(
-            level = level,
-            lengthMinutes = (levelLengthMs / MS_PER_MINUTE).toInt(),
+            level = clock.level,
+            lengthMinutes = (clock.levelLengthMs / MS_PER_MINUTE).toInt(),
             secondsLeft = wholeSecondsLeft(left),
-            isRunning = isRunning,
-            isAtLevelStart = !isRunning && left == levelLengthMs,
-            blindsUp = blindsUp,
+            isRunning = clock.isRunning,
+            isAtLevelStart = !clock.isRunning && left == clock.levelLengthMs,
+            blindsUp = ringing || clock.waitingForAlarm ||
+                (endedAt != null && t - endedAt < BLINDS_UP_MS),
+            isAlarmRinging = ringing,
         )
     }
 
@@ -143,11 +127,7 @@ class ClockViewModel(
 
         fun factory(context: Context): ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                ClockViewModel(
-                    PreferencesClockStore(context),
-                    SystemClock::elapsedRealtime,
-                    LevelEndScheduler(context),
-                )
+                ClockViewModel(ClockController.get(context), SystemClock::elapsedRealtime)
             }
         }
     }

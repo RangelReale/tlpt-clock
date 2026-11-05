@@ -21,16 +21,19 @@ enum class AlarmSound {
     NONE,
 }
 
-const val MIN_BEEPS = 1
-const val MAX_BEEPS = 10
+const val MIN_RINGS = 1
+const val MAX_RINGS = 10
 
 data class AppSettings(
     val theme: ThemeMode = ThemeMode.SYSTEM,
     val sound: AlarmSound = AlarmSound.BEEPS,
-    val beepCount: Int = 3,
+    /** How many times the alarm rings. */
+    val ringCount: Int = 5,
     /** The sound used when [sound] is [AlarmSound.DEVICE_SOUND]. */
     val soundUri: Uri? = null,
     val vibrate: Boolean = false,
+    /** The next level starts only when the alarm stops by itself or the user stops it. */
+    val waitForAlarm: Boolean = true,
 )
 
 /**
@@ -44,14 +47,15 @@ class SettingsStore private constructor(private val prefs: SharedPreferences) {
 
     fun update(change: (AppSettings) -> AppSettings) {
         val new = change(_settings.value).let {
-            it.copy(beepCount = it.beepCount.coerceIn(MIN_BEEPS, MAX_BEEPS))
+            it.copy(ringCount = it.ringCount.coerceIn(MIN_RINGS, MAX_RINGS))
         }
         prefs.edit {
             putString(KEY_THEME, new.theme.name)
             putString(KEY_SOUND, new.sound.name)
-            putInt(KEY_BEEPS, new.beepCount)
+            putInt(KEY_RINGS, new.ringCount)
             if (new.soundUri != null) putString(KEY_URI, new.soundUri.toString()) else remove(KEY_URI)
             putBoolean(KEY_VIBRATE, new.vibrate)
+            putBoolean(KEY_WAIT, new.waitForAlarm)
         }
         _settings.value = new
     }
@@ -61,18 +65,20 @@ class SettingsStore private constructor(private val prefs: SharedPreferences) {
         return AppSettings(
             theme = enumOrDefault(prefs.getString(KEY_THEME, null), defaults.theme),
             sound = enumOrDefault(prefs.getString(KEY_SOUND, null), defaults.sound),
-            beepCount = prefs.getInt(KEY_BEEPS, defaults.beepCount).coerceIn(MIN_BEEPS, MAX_BEEPS),
+            ringCount = prefs.getInt(KEY_RINGS, defaults.ringCount).coerceIn(MIN_RINGS, MAX_RINGS),
             soundUri = prefs.getString(KEY_URI, null)?.let(Uri::parse),
             vibrate = prefs.getBoolean(KEY_VIBRATE, defaults.vibrate),
+            waitForAlarm = prefs.getBoolean(KEY_WAIT, defaults.waitForAlarm),
         )
     }
 
     companion object {
         private const val KEY_THEME = "theme"
         private const val KEY_SOUND = "alarm_sound"
-        private const val KEY_BEEPS = "beep_count"
+        private const val KEY_RINGS = "ring_count"
         private const val KEY_URI = "sound_uri"
         private const val KEY_VIBRATE = "vibrate"
+        private const val KEY_WAIT = "wait_for_alarm"
 
         @Volatile
         private var instance: SettingsStore? = null

@@ -9,6 +9,9 @@
         android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Rings the alarm for longer than a broadcast receiver may run. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:icon="@mipmap/ic_launcher"
@@ -28,5 +31,9 @@
         <receiver
             android:name=".alarm.LevelEndReceiver"
             android:exported="false" />
+        <service
+            android:name=".alarm.AlarmService"
+            android:exported="false"
+            android:foregroundServiceType="shortService" />
     </application>
 </manifest>

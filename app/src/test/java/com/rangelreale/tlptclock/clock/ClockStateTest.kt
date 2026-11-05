@@ -131,6 +131,35 @@ class ClockStateTest {
     }
 
     @Test
+    fun `waiting for the alarm holds the next level at its full length`() {
+        val waiting = tenMinutes.start(0).advance(10 * minute + 500, waitForAlarm = true)
+        assertEquals(2, waiting.level)
+        assertTrue(waiting.waitingForAlarm)
+        assertFalse(waiting.isRunning)
+        assertEquals(10 * minute, waiting.remainingAt(15 * minute))
+
+        val started = waiting.start(10 * minute + 9_000)
+        assertFalse(started.waitingForAlarm)
+        assertEquals(20 * minute + 9_000, started.endsAtMs)
+    }
+
+    @Test
+    fun `pausing while waiting ends the wait`() {
+        val waiting = tenMinutes.start(0).advance(10 * minute, waitForAlarm = true)
+        val paused = waiting.pause(10 * minute)
+        assertFalse(paused.waitingForAlarm)
+        assertFalse(paused.isRunning)
+    }
+
+    @Test
+    fun `changing the level while waiting keeps waiting`() {
+        val waiting = tenMinutes.start(0).advance(10 * minute, waitForAlarm = true)
+        val next = waiting.nextLevel(10 * minute)
+        assertEquals(3, next.level)
+        assertTrue(next.waitingForAlarm)
+    }
+
+    @Test
     fun `display rounds up to whole seconds`() {
         assertEquals("20:00", formatSeconds(wholeSecondsLeft(20 * minute)))
         assertEquals("19:59", formatSeconds(wholeSecondsLeft(20 * minute - 1000)))

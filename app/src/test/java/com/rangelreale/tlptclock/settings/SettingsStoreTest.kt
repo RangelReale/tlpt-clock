@@ -19,7 +19,7 @@ class SettingsStoreTest {
     fun reset() = SettingsStore.resetForTest()
 
     @Test
-    fun `defaults are three beeps and the device theme`() {
+    fun `defaults are five rings, waiting for the alarm and the device theme`() {
         assertEquals(AppSettings(), SettingsStore.get(context).settings.value)
     }
 
@@ -32,22 +32,23 @@ class SettingsStoreTest {
                 sound = AlarmSound.DEVICE_SOUND,
                 soundUri = uri,
                 vibrate = true,
-                beepCount = 5,
+                ringCount = 7,
+                waitForAlarm = false,
             )
         }
         SettingsStore.resetForTest()
         assertEquals(
-            AppSettings(ThemeMode.LIGHT, AlarmSound.DEVICE_SOUND, 5, uri, true),
+            AppSettings(ThemeMode.LIGHT, AlarmSound.DEVICE_SOUND, 7, uri, true, false),
             SettingsStore.get(context).settings.value,
         )
     }
 
     @Test
-    fun `beep count stays within its limits`() {
+    fun `ring count stays within its limits`() {
         val store = SettingsStore.get(context)
-        store.update { it.copy(beepCount = 0) }
-        assertEquals(MIN_BEEPS, store.settings.value.beepCount)
-        store.update { it.copy(beepCount = 99) }
-        assertEquals(MAX_BEEPS, store.settings.value.beepCount)
+        store.update { it.copy(ringCount = 0) }
+        assertEquals(MIN_RINGS, store.settings.value.ringCount)
+        store.update { it.copy(ringCount = 99) }
+        assertEquals(MAX_RINGS, store.settings.value.ringCount)
     }
 }

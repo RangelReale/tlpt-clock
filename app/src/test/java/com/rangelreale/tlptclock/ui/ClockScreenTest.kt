@@ -15,7 +15,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
+import com.rangelreale.tlptclock.clock.ClockController
 import com.rangelreale.tlptclock.clock.ClockViewModel
+import com.rangelreale.tlptclock.clock.LevelEndAlarm
 import com.rangelreale.tlptclock.clock.MS_PER_MINUTE
 import com.rangelreale.tlptclock.clock.PreferencesClockStore
 import com.rangelreale.tlptclock.settings.AlarmSound
@@ -44,9 +46,15 @@ class ClockScreenTest {
 
     private var settingsOpened = false
 
+    /** Rings without sound. The test stops it with the Stop alarm button. */
+    private val alarm = object : LevelEndAlarm {
+        override fun ring(level: Int) = true
+        override fun stop() {}
+    }
+
     private fun show(theme: ThemeMode = ThemeMode.DARK): ClockViewModel {
         val store = PreferencesClockStore(ApplicationProvider.getApplicationContext<Application>())
-        val vm = ClockViewModel(store, { time })
+        val vm = ClockViewModel(ClockController(store, { time }, alarm = alarm, waitForAlarm = { true }), { time })
         compose.setContent {
             val ui by vm.ui.collectAsState()
             ClockTheme(theme) { ClockScreen(ui, vm, onOpenSettings = { settingsOpened = true }) }
@@ -84,8 +92,11 @@ class ClockScreenTest {
         compose.onNodeWithText("Light").performClick()
         assertEquals(ThemeMode.LIGHT, settings.value.theme)
 
-        compose.onNodeWithContentDescription("One beep more").performClick()
-        assertEquals(4, settings.value.beepCount)
+        compose.onNodeWithContentDescription("One ring more").performClick()
+        assertEquals(6, settings.value.ringCount)
+
+        compose.onNodeWithText("Start the next level after the alarm").performClick()
+        assertEquals(false, settings.value.waitForAlarm)
 
         compose.onNodeWithText("Sound from the device").performClick()
         assertEquals(AlarmSound.DEVICE_SOUND, settings.value.sound)
@@ -154,7 +165,7 @@ class ClockScreenTest {
     }
 
     @Test
-    fun `countdown resets by itself between blinds`() {
+    fun `the next level starts when the alarm is stopped`() {
         val vm = show()
         compose.onNodeWithContentDescription("5 minutes").performClick()
         compose.onNodeWithText("Start").performClick()
@@ -163,7 +174,14 @@ class ClockScreenTest {
         vm.tick()
         compose.onNodeWithText("05:00").assertExists()
         compose.onNodeWithText("Blinds up: level 2").assertExists()
+        save("portrait-alarm")
+
+        time += 3_000
+        compose.onNodeWithText("Stop alarm").performClick()
         compose.onNodeWithText("Pause").assertExists()
+        time += MS_PER_MINUTE
+        vm.tick()
+        compose.onNodeWithText("04:00").assertExists()
     }
 
     @Test

@@ -229,11 +229,16 @@ private fun Controls(
         LengthStepper(ui, actions, onEditLength)
         PresetRow(ui, actions)
         Button(
-            onClick = actions::startOrPause,
+            onClick = if (ui.isAlarmRinging) actions::stopAlarm else actions::startOrPause,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(72.dp),
-            colors = if (ui.isRunning) {
+            colors = if (ui.isAlarmRinging) {
+                ButtonDefaults.buttonColors(
+                    containerColor = LocalClockColors.current.urgent,
+                    contentColor = Color.White,
+                )
+            } else if (ui.isRunning) {
                 ButtonDefaults.buttonColors(
                     containerColor = LocalClockColors.current.warning,
                     contentColor = LocalClockColors.current.onWarning,
@@ -245,6 +250,7 @@ private fun Controls(
             Text(
                 text = stringResource(
                     when {
+                        ui.isAlarmRinging -> R.string.stop_alarm
                         ui.isRunning -> R.string.pause
                         ui.isAtLevelStart -> R.string.start
                         else -> R.string.resume

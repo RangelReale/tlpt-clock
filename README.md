@@ -6,7 +6,7 @@ A native Android poker clock for TLPT (The Little Poker Table). This first versi
 
 - **Change the level length:** tap `−` or `+` to change it by one minute, or tap a preset. To type any length from 1 to 180 minutes, tap the time or the length button.
 - **Change it during a level:** the time already played stays the same, and the new length also applies to later levels. A change never ends a level by itself.
-- **When the countdown reaches zero:** the app plays the alarm and shows "Blinds up" for 10 seconds. The next level then runs from its full length without a tap.
+- **When the countdown reaches zero:** the alarm rings 5 times and the app shows "Blinds up". Tap **Stop alarm**, on the clock or in the alarm notification, to silence it. The next level starts from its full length when the alarm stops by itself or when you stop it. In the settings you can instead let the next level start at once, while the alarm rings.
 - **Move between levels by hand:** `‹` and `›` change the level and restart the countdown.
 - **Reset level** restarts the countdown of the current level.
 - **New game** returns to a paused level 1 and keeps the level length.
@@ -27,8 +27,10 @@ Pausing the clock removes the notification and the alarm. After a device restart
 Tap the gear button to open the settings.
 
 - **Theme:** the same as the device, light, or dark.
-- **Alarm when a level ends:** 1 to 10 beeps, a sound from the device, or no sound. A device sound plays for at most 8 seconds. If it cannot play, the app beeps instead.
-- **Vibrate:** vibrates three times with the alarm.
+- **Alarm when a level ends:** beeps, a sound from the device, or no sound. If a device sound cannot play, the app beeps instead.
+- **Number of rings:** 1 to 10. Each ring of a device sound lasts up to 3 seconds.
+- **Vibrate:** vibrates with each ring.
+- **Start the next level after the alarm:** on by default. When it is off, the next level starts as soon as the level ends.
 - **Test alarm** plays the alarm with the current settings.
 
 ## Building

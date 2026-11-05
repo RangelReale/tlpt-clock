@@ -43,8 +43,8 @@ import androidx.compose.ui.unit.sp
 import com.rangelreale.tlptclock.R
 import com.rangelreale.tlptclock.settings.AlarmSound
 import com.rangelreale.tlptclock.settings.AppSettings
-import com.rangelreale.tlptclock.settings.MAX_BEEPS
-import com.rangelreale.tlptclock.settings.MIN_BEEPS
+import com.rangelreale.tlptclock.settings.MAX_RINGS
+import com.rangelreale.tlptclock.settings.MIN_RINGS
 import com.rangelreale.tlptclock.settings.ThemeMode
 
 /**
@@ -107,7 +107,6 @@ fun SettingsScreen(
             RadioRow(stringResource(R.string.sound_beeps), settings.sound == AlarmSound.BEEPS) {
                 onChange { it.copy(sound = AlarmSound.BEEPS) }
             }
-            if (settings.sound == AlarmSound.BEEPS) BeepCount(settings, onChange)
 
             RadioRow(
                 label = stringResource(R.string.sound_device),
@@ -126,20 +125,16 @@ fun SettingsScreen(
             }
         }
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 56.dp)
-                .toggleable(
-                    value = settings.vibrate,
-                    role = Role.Switch,
-                    onValueChange = { on -> onChange { it.copy(vibrate = on) } },
-                ),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(stringResource(R.string.vibrate), Modifier.weight(1f))
-            Switch(checked = settings.vibrate, onCheckedChange = null)
+        RingCount(settings, onChange)
+
+        SwitchRow(stringResource(R.string.vibrate), null, settings.vibrate) { on ->
+            onChange { it.copy(vibrate = on) }
         }
+        SwitchRow(
+            stringResource(R.string.wait_for_alarm),
+            stringResource(R.string.wait_for_alarm_detail),
+            settings.waitForAlarm,
+        ) { on -> onChange { it.copy(waitForAlarm = on) } }
 
         Button(
             onClick = onTestAlarm,
@@ -198,18 +193,41 @@ private fun RadioRow(
 }
 
 @Composable
-private fun BeepCount(settings: AppSettings, onChange: ((AppSettings) -> AppSettings) -> Unit) {
+private fun SwitchRow(label: String, detail: String?, checked: Boolean, onChange: (Boolean) -> Unit) {
     Row(
-        modifier = Modifier.padding(start = 48.dp, bottom = 8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 56.dp)
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onChange),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f).padding(end = 16.dp)) {
+            Text(label)
+            if (detail != null) {
+                Text(
+                    detail,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        Switch(checked = checked, onCheckedChange = null)
+    }
+}
+
+@Composable
+private fun RingCount(settings: AppSettings, onChange: ((AppSettings) -> AppSettings) -> Unit) {
+    Row(
+        modifier = Modifier.padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text(stringResource(R.string.beep_count), Modifier.weight(1f))
-        val fewer = stringResource(R.string.fewer_beeps)
-        val more = stringResource(R.string.more_beeps)
+        Text(stringResource(R.string.ring_count), Modifier.weight(1f))
+        val fewer = stringResource(R.string.fewer_rings)
+        val more = stringResource(R.string.more_rings)
         Button(
-            onClick = { onChange { it.copy(beepCount = it.beepCount - 1) } },
-            enabled = settings.beepCount > MIN_BEEPS,
+            onClick = { onChange { it.copy(ringCount = it.ringCount - 1) } },
+            enabled = settings.ringCount > MIN_RINGS,
             colors = ButtonDefaults.filledTonalButtonColors(),
             contentPadding = PaddingValues(0.dp),
             modifier = Modifier
@@ -217,14 +235,14 @@ private fun BeepCount(settings: AppSettings, onChange: ((AppSettings) -> AppSett
                 .semantics { contentDescription = fewer },
         ) { Text("−", fontSize = 24.sp) }
         Text(
-            settings.beepCount.toString(),
+            settings.ringCount.toString(),
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.width(32.dp),
             textAlign = TextAlign.Center,
         )
         Button(
-            onClick = { onChange { it.copy(beepCount = it.beepCount + 1) } },
-            enabled = settings.beepCount < MAX_BEEPS,
+            onClick = { onChange { it.copy(ringCount = it.ringCount + 1) } },
+            enabled = settings.ringCount < MAX_RINGS,
             colors = ButtonDefaults.filledTonalButtonColors(),
             contentPadding = PaddingValues(0.dp),
             modifier = Modifier
