@@ -60,6 +60,9 @@ import com.rangelreale.tlptclock.clock.MIN_LENGTH_MINUTES
 import com.rangelreale.tlptclock.clock.formatSeconds
 
 private const val BIG_STEP_MINUTES = 5
+
+/** Four 56 dp step buttons, four 4 dp gaps and 96 dp for "180 min" in the length button. */
+private val ONE_ROW_LENGTH_WIDTH = 336.dp
 private const val WARNING_SECONDS = 60L
 private const val URGENT_SECONDS = 10L
 
@@ -225,8 +228,7 @@ private fun Controls(
             style = MaterialTheme.typography.labelLarge,
             textAlign = TextAlign.Center,
         )
-        LengthStepper(ui, actions, onEditLength)
-        BigStepRow(ui, actions)
+        LengthControls(ui, actions, onEditLength)
         Button(
             onClick = if (ui.isAlarmRinging) actions::stopAlarm else actions::startOrPause,
             modifier = Modifier
@@ -290,16 +292,45 @@ private fun Controls(
     }
 }
 
+/** One row with the five-minute steps on the outside when it fits, otherwise two rows. */
 @Composable
-private fun LengthStepper(ui: ClockUiState, actions: ClockActions, onEditLength: () -> Unit) {
+private fun LengthControls(ui: ClockUiState, actions: ClockActions, onEditLength: () -> Unit) {
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        if (maxWidth >= ONE_ROW_LENGTH_WIDTH) {
+            LengthStepper(ui, actions, onEditLength, withBigSteps = true)
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                LengthStepper(ui, actions, onEditLength, withBigSteps = false)
+                BigStepRow(ui, actions)
+            }
+        }
+    }
+}
+
+@Composable
+private fun LengthStepper(
+    ui: ClockUiState,
+    actions: ClockActions,
+    onEditLength: () -> Unit,
+    withBigSteps: Boolean,
+) {
+    val canShorten = ui.canEdit && ui.lengthMinutes > MIN_LENGTH_MINUTES
+    val canLengthen = ui.canEdit && ui.lengthMinutes < MAX_LENGTH_MINUTES
     Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(if (withBigSteps) 4.dp else 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        if (withBigSteps) {
+            StepButton(
+                glyph = "−$BIG_STEP_MINUTES",
+                label = stringResource(R.string.much_shorter),
+                enabled = canShorten,
+            ) { actions.setLengthMinutes(ui.lengthMinutes - BIG_STEP_MINUTES) }
+        }
         StepButton(
             glyph = "−",
             label = stringResource(R.string.shorter),
-            enabled = ui.canEdit && ui.lengthMinutes > MIN_LENGTH_MINUTES,
+            enabled = canShorten,
         ) { actions.setLengthMinutes(ui.lengthMinutes - 1) }
         OutlinedButton(
             onClick = onEditLength,
@@ -316,8 +347,15 @@ private fun LengthStepper(ui: ClockUiState, actions: ClockActions, onEditLength:
         StepButton(
             glyph = "+",
             label = stringResource(R.string.longer),
-            enabled = ui.canEdit && ui.lengthMinutes < MAX_LENGTH_MINUTES,
+            enabled = canLengthen,
         ) { actions.setLengthMinutes(ui.lengthMinutes + 1) }
+        if (withBigSteps) {
+            StepButton(
+                glyph = "+$BIG_STEP_MINUTES",
+                label = stringResource(R.string.much_longer),
+                enabled = canLengthen,
+            ) { actions.setLengthMinutes(ui.lengthMinutes + BIG_STEP_MINUTES) }
+        }
     }
 }
 
@@ -332,7 +370,12 @@ private fun StepButton(glyph: String, label: String, enabled: Boolean, onClick: 
             .size(width = 56.dp, height = 56.dp)
             .semantics { contentDescription = label },
     ) {
-        Text(glyph, fontSize = 28.sp)
+        // "−5" and "+5" need a smaller size than "−" and "+" to fit the round button.
+        if (glyph.length > 1) {
+            Text(glyph, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        } else {
+            Text(glyph, fontSize = 28.sp)
+        }
     }
 }
 
