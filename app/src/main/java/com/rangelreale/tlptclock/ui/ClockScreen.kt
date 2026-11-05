@@ -61,8 +61,11 @@ import com.rangelreale.tlptclock.clock.formatSeconds
 
 private const val BIG_STEP_MINUTES = 5
 
-/** Four 56 dp step buttons, four 4 dp gaps and 96 dp for "180 min" in the length button. */
-private val ONE_ROW_LENGTH_WIDTH = 336.dp
+/**
+ * Four 56 dp step buttons, four 4 dp gaps and 80 dp for "99 min" in the length button, so that a
+ * 360 dp wide phone in portrait gets one row. Lengths of 100 minutes or more may touch the edges.
+ */
+private val ONE_ROW_LENGTH_WIDTH = 320.dp
 private const val WARNING_SECONDS = 60L
 private const val URGENT_SECONDS = 10L
 

@@ -21,7 +21,6 @@ import androidx.test.core.app.ApplicationProvider
 import com.rangelreale.tlptclock.clock.ClockController
 import com.rangelreale.tlptclock.clock.ClockViewModel
 import com.rangelreale.tlptclock.clock.LevelEndAlarm
-import com.rangelreale.tlptclock.clock.MAX_LENGTH_MINUTES
 import com.rangelreale.tlptclock.clock.MS_PER_MINUTE
 import com.rangelreale.tlptclock.clock.PreferencesClockStore
 import com.rangelreale.tlptclock.settings.AlarmSound
@@ -250,11 +249,15 @@ class ClockScreenTest {
 
     @Test
     @Config(qualifiers = "w891dp-h411dp-land-xxhdpi")
-    fun `landscape phone screenshot`() {
-        // The length controls fit in one row here, but only just, so this checks the widest length.
+    fun `landscape phone screenshot`() = screenshot("landscape")
+
+    @Test
+    @Config(qualifiers = "w360dp-h780dp-port-xxhdpi")
+    fun `common portrait phone screenshot`() {
+        // The narrowest common phone, which still gets the length controls in one row.
         val vm = show()
-        vm.setLengthMinutes(MAX_LENGTH_MINUTES)
-        save("landscape")
+        vm.setLengthMinutes(99)
+        save("portrait-360")
     }
 
     @Test
