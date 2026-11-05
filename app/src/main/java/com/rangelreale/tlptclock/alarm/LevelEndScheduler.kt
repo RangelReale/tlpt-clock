@@ -10,6 +10,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.SystemClock
+import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.rangelreale.tlptclock.MainActivity
@@ -39,7 +40,7 @@ class LevelEndScheduler(context: Context) : ClockScheduler {
         // The clock uses the time since boot. The alarm clock API needs wall-clock time.
         val wallEndsAt = System.currentTimeMillis() + (endsAt - SystemClock.elapsedRealtime())
         scheduleAlarm(wallEndsAt)
-        showNotification(state.level, wallEndsAt)
+        showNotification(state.level, endsAt)
     }
 
     private fun scheduleAlarm(wallEndsAt: Long) {
@@ -55,7 +56,8 @@ class LevelEndScheduler(context: Context) : ClockScheduler {
         }
     }
 
-    private fun showNotification(level: Int, wallEndsAt: Long) {
+    /** @param endsAt The level end in time since boot, which the countdown view uses. */
+    private fun showNotification(level: Int, endsAt: Long) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
             PackageManager.PERMISSION_GRANTED
@@ -63,14 +65,20 @@ class LevelEndScheduler(context: Context) : ClockScheduler {
             return
         }
         ensureChannel()
+        val levelText = context.getString(R.string.level, level)
+        // A custom view, because the standard countdown in the header is small and easy to miss.
+        val view = RemoteViews(context.packageName, R.layout.notification_clock).apply {
+            setTextViewText(R.id.level, levelText)
+            setChronometer(R.id.time_left, endsAt, null, true)
+            setChronometerCountDown(R.id.time_left, true)
+        }
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(context.getString(R.string.level, level))
+            .setContentTitle(levelText)
             .setContentText(context.getString(R.string.notification_text))
-            .setWhen(wallEndsAt)
-            .setShowWhen(true)
-            .setUsesChronometer(true)
-            .setChronometerCountDown(true)
+            .setCustomContentView(view)
+            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+            .setShowWhen(false)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setSilent(true)
