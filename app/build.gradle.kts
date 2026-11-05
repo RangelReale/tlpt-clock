@@ -4,6 +4,10 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+// Release signing comes from environment variables, so that no key or password is in the
+// repository. Without them, the release build is unsigned and the CI attaches the debug APK instead.
+val releaseKeystore: String? = System.getenv("RELEASE_KEYSTORE_FILE")
+
 android {
     namespace = "com.rangelreale.tlptclock"
     compileSdk = 35
@@ -12,8 +16,26 @@ android {
         applicationId = "com.rangelreale.tlptclock"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1"
+        // The release workflow sets these from the run number and the tag.
+        versionCode = System.getenv("VERSION_CODE")?.toInt() ?: 1
+        versionName = System.getenv("VERSION_NAME") ?: "0.1"
+    }
+
+    signingConfigs {
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = file(releaseKeystore)
+                storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("RELEASE_KEY_ALIAS")
+                keyPassword = System.getenv("RELEASE_KEY_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig = signingConfigs.findByName("release")
+        }
     }
 
     compileOptions {

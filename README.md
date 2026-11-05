@@ -44,3 +44,23 @@ The build needs JDK 17 or newer and an Android SDK found through `ANDROID_HOME`.
 ```
 
 The tests run without a device. They do not cover the length dialog, because its text field never goes idle under Robolectric (the library that runs Android code on a computer). Check the dialog on a device or emulator after changing it.
+
+## Continuous integration and releases
+
+GitHub Actions runs two workflows:
+
+- **CI** runs the unit tests and builds the debug APK on every push and pull request. The APK and the layout pictures are saved with the run.
+- **Release** runs when you push a version tag such as `v0.2`. It builds the APK and attaches it to a GitHub release for that tag. The app's version name is the tag without the `v`, and its version code is the workflow run number.
+
+The release APK is signed with the key stored in these repository secrets:
+
+| Secret | Value |
+| --- | --- |
+| `RELEASE_KEYSTORE_BASE64` | The keystore file, encoded in base64 |
+| `RELEASE_KEYSTORE_PASSWORD` | The keystore password |
+| `RELEASE_KEY_ALIAS` | The key alias |
+| `RELEASE_KEY_PASSWORD` | The key password |
+
+Without these secrets, the release gets the debug APK instead.
+
+To build a signed release APK locally, set the same values as environment variables, with `RELEASE_KEYSTORE_FILE` holding the path to the keystore instead of its base64 text. Then run `./gradlew :app:assembleRelease`.

@@ -1,0 +1,61 @@
+# Builds a release APK when a version tag such as v0.2 is pushed, and attaches it to a GitHub
+# release for that tag.
+#
+# The APK is signed with the key in the RELEASE_KEYSTORE_BASE64 secret. Without that secret, the
+# release gets the debug APK instead, which installs fine but cannot update a release-signed app.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      VERSION_CODE: ${{ github.run_number }}
+      HAS_KEY: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # The app shows "0.2" for the tag "v0.2".
+      - name: Set the version
+        run: echo "VERSION_NAME=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Test
+        run: ./gradlew :app:testDebugUnitTest
+
+      - name: Build the signed release APK
+        if: env.HAS_KEY == 'true'
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          export RELEASE_KEYSTORE_FILE="$RUNNER_TEMP/release.jks"
+          echo "$RELEASE_KEYSTORE_BASE64" | base64 --decode > "$RELEASE_KEYSTORE_FILE"
+          ./gradlew :app:assembleRelease
+          rm "$RELEASE_KEYSTORE_FILE"
+          cp app/build/outputs/apk/release/app-release.apk "tlpt-clock-$GITHUB_REF_NAME.apk"
+
+      - name: Build the debug APK
+        if: env.HAS_KEY != 'true'
+        run: |
+          ./gradlew :app:assembleDebug
+          cp app/build/outputs/apk/debug/app-debug.apk "tlpt-clock-$GITHUB_REF_NAME-debug.apk"
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" tlpt-clock-*.apk --title "$GITHUB_REF_NAME" --generate-notes
