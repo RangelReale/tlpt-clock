@@ -50,7 +50,9 @@ The tests run without a device. They do not cover the length dialog, because its
 GitHub Actions runs two workflows:
 
 - **CI** runs the unit tests and builds the debug APK on every push and pull request. The APK and the layout pictures are saved with the run.
-- **Release** runs when you push a version tag such as `v0.2`. It builds the APK and attaches it to a GitHub release for that tag. The app's version name is the tag without the `v`, and its version code is the workflow run number.
+- **Release** runs when you push a version tag such as `v0.2.0`. It builds the APK and attaches it to a GitHub release for that tag. The app's version name is the tag without the `v`, and its version code is the workflow run number.
+
+The release notes come from [CHANGELOG.md](CHANGELOG.md), which follows the Keep a Changelog format. The workflow uses the section whose version matches the tag, so `v0.2.0` uses the section `## [0.2.0]`. Before you push a tag, move the entries under "Unreleased" into a section for the new version. If there is no matching section, GitHub writes notes from the commits instead.
 
 The release APK is signed with the key stored in these repository secrets:
 
