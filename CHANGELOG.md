@@ -10,6 +10,12 @@ Before you push a tag, move the entries under "Unreleased" into a new section fo
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-11-05
+
+### Fixed
+
+- On phones about 360 dp wide, the five-minute buttons now share one row with `−` and `+`.
+
 ## [1.1.0] - 2026-11-05
 
 ### Changed
@@ -33,6 +39,7 @@ Before you push a tag, move the entries under "Unreleased" into a new section fo
 - A light, dark or device-matching theme.
 - The level length, Reset level and New game can change only while the clock is paused.
 
-[Unreleased]: https://github.com/RangelReale/tlpt-clock/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/RangelReale/tlpt-clock/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/RangelReale/tlpt-clock/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/RangelReale/tlpt-clock/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/RangelReale/tlpt-clock/releases/tag/v1.0.0
