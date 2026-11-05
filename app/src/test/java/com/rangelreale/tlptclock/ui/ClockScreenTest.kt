@@ -131,11 +131,17 @@ class ClockScreenTest {
     }
 
     @Test
-    fun `presets and steppers change the countdown with one tap`() {
+    fun `steppers change the countdown with one tap`() {
         show()
         compose.onNodeWithText("20:00").assertExists()
 
-        compose.onNodeWithContentDescription("10 minutes").performClick()
+        compose.onNodeWithContentDescription("Five minutes shorter").performClick()
+        compose.onNodeWithContentDescription("Five minutes shorter").performClick()
+        compose.onNodeWithText("10:00").assertExists()
+
+        compose.onNodeWithContentDescription("Five minutes longer").performClick()
+        compose.onNodeWithText("15:00").assertExists()
+        compose.onNodeWithContentDescription("Five minutes shorter").performClick()
         compose.onNodeWithText("10:00").assertExists()
 
         compose.onNodeWithContentDescription("One minute longer").performClick()
@@ -169,7 +175,7 @@ class ClockScreenTest {
     @Test
     fun `the next level starts when the alarm is stopped`() {
         val vm = show()
-        compose.onNodeWithContentDescription("5 minutes").performClick()
+        vm.setLengthMinutes(5)
         compose.onNodeWithText("Start").performClick()
 
         time = 5 * MS_PER_MINUTE
@@ -190,7 +196,8 @@ class ClockScreenTest {
     fun `length reset and new game work only while paused`() {
         show()
         compose.onNodeWithText("Start").performClick()
-        compose.onNodeWithContentDescription("10 minutes").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("Five minutes longer").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("Five minutes shorter").assertIsNotEnabled()
         compose.onNodeWithContentDescription("One minute longer").assertIsNotEnabled()
         compose.onNodeWithContentDescription("One minute shorter").assertIsNotEnabled()
         compose.onNodeWithText("20 min").assertIsNotEnabled()
@@ -199,7 +206,7 @@ class ClockScreenTest {
         save("portrait-running")
 
         compose.onNodeWithText("Pause").performClick()
-        compose.onNodeWithContentDescription("10 minutes").assertIsEnabled()
+        compose.onNodeWithContentDescription("Five minutes longer").assertIsEnabled()
         compose.onNodeWithText("Reset level").assertIsEnabled()
         compose.onNodeWithText("New game").assertIsEnabled()
     }

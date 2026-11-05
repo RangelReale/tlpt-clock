@@ -1,6 +1,5 @@
 package com.rangelreale.tlptclock.ui
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -60,7 +59,7 @@ import com.rangelreale.tlptclock.clock.MAX_LENGTH_MINUTES
 import com.rangelreale.tlptclock.clock.MIN_LENGTH_MINUTES
 import com.rangelreale.tlptclock.clock.formatSeconds
 
-private val PRESET_MINUTES = listOf(5, 10, 15, 20, 30)
+private const val BIG_STEP_MINUTES = 5
 private const val WARNING_SECONDS = 60L
 private const val URGENT_SECONDS = 10L
 
@@ -227,7 +226,7 @@ private fun Controls(
             textAlign = TextAlign.Center,
         )
         LengthStepper(ui, actions, onEditLength)
-        PresetRow(ui, actions)
+        BigStepRow(ui, actions)
         Button(
             onClick = if (ui.isAlarmRinging) actions::stopAlarm else actions::startOrPause,
             modifier = Modifier
@@ -337,40 +336,43 @@ private fun StepButton(glyph: String, label: String, enabled: Boolean, onClick: 
     }
 }
 
+/** Changes the length by five minutes. The view model keeps the result within the limits. */
 @Composable
-private fun PresetRow(ui: ClockUiState, actions: ClockActions) {
-    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        PRESET_MINUTES.forEach { minutes ->
-            val selected = minutes == ui.lengthMinutes
-            val label = stringResource(R.string.preset_minutes, minutes)
-            OutlinedButton(
-                onClick = { actions.setLengthMinutes(minutes) },
-                enabled = ui.canEdit,
-                contentPadding = PaddingValues(0.dp),
-                colors = if (selected) {
-                    // While running, the chosen preset stays visible but dimmed.
-                    ButtonDefaults.outlinedButtonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                        disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.38f),
-                        disabledContentColor = MaterialTheme.colorScheme.onPrimary,
-                    )
-                } else {
-                    ButtonDefaults.outlinedButtonColors()
-                },
-                border = when {
-                    selected -> null
-                    ui.canEdit -> BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-                    else -> BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
-                },
-                modifier = Modifier
-                    .weight(1f)
-                    .height(48.dp)
-                    .semantics { contentDescription = label },
-            ) {
-                Text(minutes.toString(), fontWeight = FontWeight.Bold)
-            }
-        }
+private fun BigStepRow(ui: ClockUiState, actions: ClockActions) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        BigStepButton(
+            glyph = "−$BIG_STEP_MINUTES",
+            label = stringResource(R.string.much_shorter),
+            enabled = ui.canEdit && ui.lengthMinutes > MIN_LENGTH_MINUTES,
+            modifier = Modifier.weight(1f),
+        ) { actions.setLengthMinutes(ui.lengthMinutes - BIG_STEP_MINUTES) }
+        BigStepButton(
+            glyph = "+$BIG_STEP_MINUTES",
+            label = stringResource(R.string.much_longer),
+            enabled = ui.canEdit && ui.lengthMinutes < MAX_LENGTH_MINUTES,
+            modifier = Modifier.weight(1f),
+        ) { actions.setLengthMinutes(ui.lengthMinutes + BIG_STEP_MINUTES) }
+    }
+}
+
+@Composable
+private fun BigStepButton(
+    glyph: String,
+    label: String,
+    enabled: Boolean,
+    modifier: Modifier,
+    onClick: () -> Unit,
+) {
+    Button(
+        onClick = onClick,
+        enabled = enabled,
+        contentPadding = PaddingValues(0.dp),
+        colors = ButtonDefaults.filledTonalButtonColors(),
+        modifier = modifier
+            .height(48.dp)
+            .semantics { contentDescription = label },
+    ) {
+        Text(glyph, fontSize = 20.sp, fontWeight = FontWeight.Bold)
     }
 }
 

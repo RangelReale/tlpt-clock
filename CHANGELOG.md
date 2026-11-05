@@ -10,6 +10,10 @@ Before you push a tag, move the entries under "Unreleased" into a new section fo
 
 ## [Unreleased]
 
+### Changed
+
+- Buttons that change the level length by five minutes replace the preset lengths.
+
 ## [1.0.0] - 2026-11-05
 
 ### Added

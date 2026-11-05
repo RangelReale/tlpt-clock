@@ -4,7 +4,7 @@ A native Android poker clock for TLPT (The Little Poker Table). This first versi
 
 ## Using the clock
 
-- **Change the level length:** pause the clock first. Then tap `−` or `+` to change it by one minute, or tap a preset. To type any length from 1 to 180 minutes, tap the time or the length button.
+- **Change the level length:** pause the clock first. Then tap `−` or `+` to change it by one minute, or `−5` or `+5` to change it by five minutes. To type any length from 1 to 180 minutes, tap the time or the length button.
 - **Change it during a level:** the time already played stays the same, and the new length also applies to later levels. A change never ends a level by itself.
 - **While the clock runs or the alarm rings,** the length controls, **Reset level** and **New game** are turned off, so a stray tap cannot change the game.
 - **When the countdown reaches zero:** the alarm rings 5 times and the app shows "Blinds up". Tap **Stop alarm**, on the clock or in the alarm notification, to silence it. The next level starts from its full length when the alarm stops by itself or when you stop it. In the settings you can instead let the next level start at once, while the alarm rings.

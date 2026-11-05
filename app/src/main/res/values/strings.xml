@@ -17,9 +17,10 @@
     <string name="length_minutes">%1$d min</string>
     <string name="shorter">One minute shorter</string>
     <string name="longer">One minute longer</string>
+    <string name="much_shorter">Five minutes shorter</string>
+    <string name="much_longer">Five minutes longer</string>
     <string name="minutes_field">Minutes (%1$d to %2$d)</string>
     <string name="set_level_length">Set level length</string>
-    <string name="preset_minutes">%1$d minutes</string>
     <string name="settings">Settings</string>
     <string name="back">Back</string>
     <string name="theme">Theme</string>
