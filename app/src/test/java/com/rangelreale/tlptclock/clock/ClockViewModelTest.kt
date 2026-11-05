@@ -2,9 +2,6 @@ package com.rangelreale.tlptclock.clock
 
 import android.app.Application
 import androidx.test.core.app.ApplicationProvider
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -21,21 +18,20 @@ class ClockViewModelTest {
     private var time = 0L
     private val store = PreferencesClockStore(ApplicationProvider.getApplicationContext<Application>())
 
-    private fun viewModel() = ClockViewModel(store) { time }
+    private val scheduled = mutableListOf<ClockState>()
 
-    private fun ClockViewModel.levelEnded(): Boolean =
-        runBlocking { withTimeoutOrNull(50) { levelEnds.first() } } != null
+    private fun viewModel() = ClockViewModel(store, { time }, { scheduled += it })
 
     @Test
-    fun `reaching zero starts the next level and signals the alarm`() {
+    fun `reaching zero starts the next level and schedules the next alarm`() {
         val vm = viewModel()
         vm.setLengthMinutes(5)
         vm.startOrPause()
+        assertEquals(5 * MS_PER_MINUTE, scheduled.last().endsAtMs)
 
         time = 5 * MS_PER_MINUTE - 1
         vm.tick()
         assertEquals(1, vm.ui.value.level)
-        assertFalse(vm.levelEnded())
 
         time = 5 * MS_PER_MINUTE
         vm.tick()
@@ -43,16 +39,23 @@ class ClockViewModelTest {
         assertEquals(300, vm.ui.value.secondsLeft)
         assertTrue(vm.ui.value.isRunning)
         assertTrue(vm.ui.value.blindsUp)
-        assertTrue(vm.levelEnded())
+        assertEquals(10 * MS_PER_MINUTE, scheduled.last().endsAtMs)
     }
 
     @Test
-    fun `changing the level by hand does not signal the alarm`() {
+    fun `pausing cancels the alarm`() {
+        val vm = viewModel()
+        vm.startOrPause()
+        vm.startOrPause()
+        assertNull(scheduled.last().endsAtMs)
+    }
+
+    @Test
+    fun `changing the level by hand does not show blinds up`() {
         val vm = viewModel()
         vm.nextLevel()
         assertEquals(2, vm.ui.value.level)
         assertFalse(vm.ui.value.blindsUp)
-        assertFalse(vm.levelEnded())
     }
 
     @Test

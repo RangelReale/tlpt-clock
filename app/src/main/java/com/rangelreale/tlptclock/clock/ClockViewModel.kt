@@ -7,16 +7,14 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.rangelreale.tlptclock.alarm.LevelEndScheduler
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChangedBy
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 /** What the screen shows. It changes at most once per second while the clock runs. */
@@ -28,6 +26,11 @@ data class ClockUiState(
     val isAtLevelStart: Boolean,
     val blindsUp: Boolean,
 )
+
+/** Keeps the alarm and notification in step with the clock while the app is in the background. */
+fun interface ClockScheduler {
+    fun update(state: ClockState)
+}
 
 /** The commands the screen can give. */
 interface ClockActions {
@@ -42,6 +45,7 @@ interface ClockActions {
 class ClockViewModel(
     private val store: ClockStore,
     private val now: () -> Long,
+    private val scheduler: ClockScheduler = ClockScheduler {},
 ) : ViewModel(), ClockActions {
 
     private var clock = store.load() ?: ClockState()
@@ -51,10 +55,10 @@ class ClockViewModel(
     private val _ui = MutableStateFlow(clock.toUi(now()))
     val ui: StateFlow<ClockUiState> = _ui.asStateFlow()
 
-    private val levelEnded = Channel<Unit>(Channel.CONFLATED)
-
-    /** Emits when a level ends by reaching zero, but not when the user changes the level. */
-    val levelEnds: Flow<Unit> = levelEnded.receiveAsFlow()
+    init {
+        // The system drops alarms when the app is updated or force-stopped.
+        scheduler.update(clock)
+    }
 
     /** Keeps the clock current while the caller stays active. It only loops while the clock runs. */
     suspend fun runTicker() {
@@ -73,11 +77,14 @@ class ClockViewModel(
         if (advanced.level != clock.level) {
             clock = advanced
             store.save(clock, t)
+            scheduler.update(clock)
             showBlindsUp()
-            levelEnded.trySend(Unit)
         }
         publish(t)
     }
+
+    /** Updates the alarm and notification, for example after the user allows notifications. */
+    fun refreshBackground() = scheduler.update(clock)
 
     override fun startOrPause() = command { state, t ->
         if (state.isRunning) state.pause(t) else state.start(t)
@@ -100,6 +107,7 @@ class ClockViewModel(
         blindsUp = false
         clock = change(clock, t)
         store.save(clock, t)
+        scheduler.update(clock)
         publish(t)
     }
 
@@ -135,7 +143,11 @@ class ClockViewModel(
 
         fun factory(context: Context): ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                ClockViewModel(PreferencesClockStore(context), SystemClock::elapsedRealtime)
+                ClockViewModel(
+                    PreferencesClockStore(context),
+                    SystemClock::elapsedRealtime,
+                    LevelEndScheduler(context),
+                )
             }
         }
     }

@@ -4,7 +4,9 @@ import android.app.Application
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ViewRootForTest
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -16,6 +18,11 @@ import androidx.test.core.app.ApplicationProvider
 import com.rangelreale.tlptclock.clock.ClockViewModel
 import com.rangelreale.tlptclock.clock.MS_PER_MINUTE
 import com.rangelreale.tlptclock.clock.PreferencesClockStore
+import com.rangelreale.tlptclock.settings.AlarmSound
+import com.rangelreale.tlptclock.settings.AppSettings
+import com.rangelreale.tlptclock.settings.ThemeMode
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -35,14 +42,79 @@ class ClockScreenTest {
 
     private var time = 0L
 
-    private fun show(): ClockViewModel {
+    private var settingsOpened = false
+
+    private fun show(theme: ThemeMode = ThemeMode.DARK): ClockViewModel {
         val store = PreferencesClockStore(ApplicationProvider.getApplicationContext<Application>())
-        val vm = ClockViewModel(store) { time }
+        val vm = ClockViewModel(store, { time })
         compose.setContent {
             val ui by vm.ui.collectAsState()
-            ClockTheme { ClockScreen(ui, vm) }
+            ClockTheme(theme) { ClockScreen(ui, vm, onOpenSettings = { settingsOpened = true }) }
         }
         return vm
+    }
+
+    private fun showSettings(theme: ThemeMode): MutableState<AppSettings> {
+        val settings = mutableStateOf(AppSettings(theme = theme))
+        compose.setContent {
+            ClockTheme(theme) {
+                SettingsScreen(
+                    settings = settings.value,
+                    soundName = null,
+                    onChange = { settings.value = it(settings.value) },
+                    onPickSound = {},
+                    onTestAlarm = {},
+                    onBack = {},
+                )
+            }
+        }
+        return settings
+    }
+
+    @Test
+    fun `the settings button opens settings`() {
+        show()
+        compose.onNodeWithContentDescription("Settings").performClick()
+        assertTrue(settingsOpened)
+    }
+
+    @Test
+    fun `settings change the theme and the alarm`() {
+        val settings = showSettings(ThemeMode.DARK)
+        compose.onNodeWithText("Light").performClick()
+        assertEquals(ThemeMode.LIGHT, settings.value.theme)
+
+        compose.onNodeWithContentDescription("One beep more").performClick()
+        assertEquals(4, settings.value.beepCount)
+
+        compose.onNodeWithText("Sound from the device").performClick()
+        assertEquals(AlarmSound.DEVICE_SOUND, settings.value.sound)
+        compose.onNodeWithText("Choose sound").assertExists()
+
+        compose.onNodeWithText("Vibrate").performClick()
+        assertTrue(settings.value.vibrate)
+    }
+
+    @Test
+    fun `settings screenshot`() {
+        showSettings(ThemeMode.DARK)
+        save("settings")
+    }
+
+    @Test
+    fun `light theme screenshot`() {
+        val vm = show(ThemeMode.LIGHT)
+        vm.setLengthMinutes(1)
+        vm.startOrPause()
+        time = 30_000
+        vm.tick()
+        save("portrait-light")
+    }
+
+    @Test
+    fun `light settings screenshot`() {
+        showSettings(ThemeMode.LIGHT)
+        save("settings-light")
     }
 
     @Test

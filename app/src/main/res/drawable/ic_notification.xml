@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The launcher's chip-and-clock mark, drawn in one colour for the status bar. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,14a40,40 0 1,0 0,80a40,40 0 1,0 0,-80z M54,30a24,24 0 1,1 0,48a24,24 0 1,1 0,-48z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M50.5,59 L50.5,37 L57.5,37 L57.5,52 L70,52 L70,59 Z" />
+</vector>

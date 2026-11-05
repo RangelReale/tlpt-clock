@@ -17,16 +17,17 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -60,28 +61,11 @@ import com.rangelreale.tlptclock.clock.MIN_LENGTH_MINUTES
 import com.rangelreale.tlptclock.clock.formatSeconds
 
 private val PRESET_MINUTES = listOf(5, 10, 15, 20, 30)
-private val Green = Color(0xFF2FBF71)
-private val Amber = Color(0xFFFFC107)
-private val Red = Color(0xFFFF5252)
 private const val WARNING_SECONDS = 60L
 private const val URGENT_SECONDS = 10L
 
 @Composable
-fun ClockTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = darkColorScheme(
-            primary = Green,
-            onPrimary = Color.Black,
-            background = Color.Black,
-            surface = Color.Black,
-        ),
-    ) {
-        Surface(modifier = Modifier.fillMaxSize(), content = content)
-    }
-}
-
-@Composable
-fun ClockScreen(ui: ClockUiState, actions: ClockActions) {
+fun ClockScreen(ui: ClockUiState, actions: ClockActions, onOpenSettings: () -> Unit = {}) {
     var editingLength by rememberSaveable { mutableStateOf(false) }
     var confirmingNewGame by rememberSaveable { mutableStateOf(false) }
 
@@ -102,14 +86,26 @@ fun ClockScreen(ui: ClockUiState, actions: ClockActions) {
                         .weight(2f)
                         .verticalScroll(rememberScrollState()),
                 ) {
-                    Controls(ui, actions, { editingLength = true }, { confirmingNewGame = true })
+                    Controls(
+                        ui,
+                        actions,
+                        { editingLength = true },
+                        { confirmingNewGame = true },
+                        onOpenSettings,
+                    )
                 }
             }
         } else {
             Column {
                 LevelRow(ui, actions)
                 TimeDisplay(ui, Modifier.weight(1f)) { editingLength = true }
-                Controls(ui, actions, { editingLength = true }, { confirmingNewGame = true })
+                Controls(
+                    ui,
+                    actions,
+                    { editingLength = true },
+                    { confirmingNewGame = true },
+                    onOpenSettings,
+                )
             }
         }
     }
@@ -157,7 +153,7 @@ private fun LevelRow(ui: ClockUiState, actions: ClockActions) {
                 stringResource(R.string.level, ui.level)
             },
             modifier = Modifier.weight(1f),
-            color = if (ui.blindsUp) Amber else Color.Unspecified,
+            color = if (ui.blindsUp) LocalClockColors.current.warning else Color.Unspecified,
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
@@ -185,10 +181,11 @@ private fun ArrowButton(glyph: String, label: String, enabled: Boolean, onClick:
 @Composable
 private fun TimeDisplay(ui: ClockUiState, modifier: Modifier, onClick: () -> Unit) {
     val text = formatSeconds(ui.secondsLeft)
+    val colors = LocalClockColors.current
     val color = when {
-        ui.secondsLeft <= URGENT_SECONDS -> Red
-        ui.secondsLeft <= WARNING_SECONDS -> Amber
-        else -> Color.White
+        ui.secondsLeft <= URGENT_SECONDS -> colors.urgent
+        ui.secondsLeft <= WARNING_SECONDS -> colors.warning
+        else -> colors.time
     }
     val editLabel = stringResource(R.string.set_level_length)
     BoxWithConstraints(
@@ -220,6 +217,7 @@ private fun Controls(
     actions: ClockActions,
     onEditLength: () -> Unit,
     onNewGame: () -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
@@ -236,7 +234,10 @@ private fun Controls(
                 .fillMaxWidth()
                 .height(72.dp),
             colors = if (ui.isRunning) {
-                ButtonDefaults.buttonColors(containerColor = Amber, contentColor = Color.Black)
+                ButtonDefaults.buttonColors(
+                    containerColor = LocalClockColors.current.warning,
+                    contentColor = LocalClockColors.current.onWarning,
+                )
             } else {
                 ButtonDefaults.buttonColors()
             },
@@ -267,6 +268,16 @@ private fun Controls(
                 modifier = Modifier.weight(1f).height(48.dp),
             ) {
                 Text(stringResource(R.string.new_game), maxLines = 1)
+            }
+            val settingsLabel = stringResource(R.string.settings)
+            OutlinedButton(
+                onClick = onOpenSettings,
+                contentPadding = PaddingValues(0.dp),
+                modifier = Modifier
+                    .size(48.dp)
+                    .semantics { contentDescription = settingsLabel },
+            ) {
+                Icon(Icons.Filled.Settings, contentDescription = null)
             }
         }
     }
