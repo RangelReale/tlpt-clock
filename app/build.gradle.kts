@@ -18,7 +18,7 @@ android {
         targetSdk = 35
         // The release workflow sets these from the run number and the tag.
         versionCode = System.getenv("VERSION_CODE")?.toInt() ?: 1
-        versionName = System.getenv("VERSION_NAME") ?: "0.1.0"
+        versionName = System.getenv("VERSION_NAME") ?: "1.0.0"
     }
 
     signingConfigs {

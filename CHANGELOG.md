@@ -10,7 +10,7 @@ Before you push a tag, move the entries under "Unreleased" into a new section fo
 
 ## [Unreleased]
 
-## [0.1.0] - 2026-11-05
+## [1.0.0] - 2026-11-05
 
 ### Added
 
@@ -26,5 +26,5 @@ Before you push a tag, move the entries under "Unreleased" into a new section fo
 - A light, dark or device-matching theme.
 - The level length, Reset level and New game can change only while the clock is paused.
 
-[Unreleased]: https://github.com/RangelReale/tlpt-clock/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/RangelReale/tlpt-clock/releases/tag/v0.1.0
+[Unreleased]: https://github.com/RangelReale/tlpt-clock/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/RangelReale/tlpt-clock/releases/tag/v1.0.0
